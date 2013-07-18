@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ book.title }}</h1>
+    <div class="bookinfo">
+    <div class="bookpic">
+     <a href="{% url "BookManager.view.ShowImg" book.pk %}"><img  src="{% url "BookManager.view.ShowImg" book.pk %}"></a>
+    </div>
+    <div class="info">
+    <span class="pl"> 作者:</span><a href="{% url "BookManager.view.Search"%}?kw={{ book.author }}">{{ book.author }}</a><br>
+    {% if book.publisher %}<span class="pl">出版社:</span>{{ book.publisher }}<br> {% endif %}
+    {% if book.translator %}<span class="pl">译者:</span>{{ book.translator }}<br> {% endif %}
+    {% if book.pubdate %}<span class="pl">出版年:</span>{{ book.pubdate }}<br> {% endif %}
+    {% if book.pages %}<span class="pl">页数:</span>{{ book.pages }}<br> {% endif %}
+    {% if book.price %}<span class="pl">定价:</span>{{ book.price }}<br> {% endif %}
+    <span class="pl">借阅次数:</span>{{ book.Lend }}<br>
+    {% if book.isbn %}<span class="pl">ISBN:</span>{{ book.isbn }}<br> {% endif %}
+        <div class="box">
+            <a href="{% url "BookManager.view.Ask" book.pk %}">点击申请借阅</a>
+            {% if request.session.admin %}
+                <a href="{% url "BookManager.view.Edit" book.pk %}">编辑</a>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+    {% if request.session.admin %}
+    <div>
+        <h2>借阅请求</h2>
+        <ul>
+            {% for x in need %}
+            <li>
+                {{ x.Name }}({{ x.Note }})
+                <a href="{% url "BookManager.view.BookLend" x.pk %}">借出</a>
+                <a href="{% url "BookManager.view.BookLend" x.pk %}delete">删除</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <div>
+        <h2>现有图书</h2>
+        {% if request.session.admin %}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <label for="Add">快速添加</label>
+                <input type="number" id="Add" name="addnum" min="0">
+                <input type="submit" value="确认">
+            </form>
+        {% endif %}
+        <ul>
+        {% for i in list %}
+            <li>
+                {{ i.BookID }}:{% if i.Use %}{{ i.Use.Name }}于{{ i.Use.Lend }}借阅{% else %}在架上{% endif %}
+                {% if request.session.admin   %}
+                {% if i.Use  %}
+                    <a href="{% url "BookManager.view.BookLend" i.Use.pk %}return">归还</a>
+                {% endif %}
+                    <a href="/book/{{ book.pk }}/{{ i.BookID }}/">详情</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% if book.summary %}
+    <div id="summary">
+        <h2>内容简介</h2>
+        <pre>{{ book.summary }}</pre>
+    </div>
+    {% endif %}
+    {% if book.author_intro %}
+        <div id="author_intro">
+            <h2>作者简介</h2>
+            <pre>{{ book.author_intro }}</pre>
+        </div>
+    {% endif %}
+{% endblock %}

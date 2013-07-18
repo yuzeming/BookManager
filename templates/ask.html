@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>{{ book.title }}</h2>
+    <p>在备注中写上您的地址以方便管理员与您联系</p>
+    <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table>
+    {{ ask.as_table }}
+    </table>
+    <button type="submit">提交</button>
+    </form>
+{% endblock %}

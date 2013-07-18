@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" class="login">
+{% csrf_token %}
+<label for="PWD">管理员密码</label>
+<input id="PWD" type="password" name="PWD">
+<input type="submit">
+</form>
+{% endblock %}

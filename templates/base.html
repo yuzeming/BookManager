@@ -1,0 +1,184 @@
+<html><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title> {% block title %} 图书搜索 {% endblock %}</title>
+
+    <style type="text/css">
+        html, body{
+            padding: 0;
+            margin: 0;
+        }
+        pre{
+            white-space:pre-wrap; /* css3.0 */
+            white-space:-moz-pre-wrap; /* Firefox */
+            white-space:-o-pre-wrap; /* Opera 7 */
+            word-wrap:break-word; /* Internet Explorer 5.5+ */
+        }
+        a{
+            text-decoration: none;
+        }
+        a:hover{
+            text-decoration: underline;
+        }
+        .site-title{
+            font-size: 30px;
+            font-weight: bold;
+            color: brown;
+        }
+
+        .searchbar{
+            display: inline-block;
+            margin: auto;
+        }
+        .searchbar input{
+            width: 240px;
+            height: 24px;
+            font-size: 14px;
+        }
+        .searchbar button{
+            width: 80px;
+            height: 30px;
+            font-size: 15px;
+        }
+        .header{
+            height: 60px;
+            padding-top: 10px;
+            margin: auto;
+            max-width: 800px;
+        }
+        .header_bg{
+            background-color: #f4f4f4;
+        }
+        .toolbox {
+            padding-top: 10px;
+            margin: auto;
+        }
+        .content{
+            padding-left: 100px;
+        }
+        .m-files-ul li{
+            list-style-type: none;
+            font-size: 13px;
+            line-height: 16px;
+            color: #555;
+        }
+        .content {
+            margin-bottom: 10px;
+        }
+        .footer{
+            color: #888;
+            text-align: center;
+            font-size: 13px;
+            margin: 40px auto 20px auto;
+        }
+        .pagination{
+            font-size: 14px;
+            margin-left: 30px;
+        }
+        .bookpic {
+            float: left;
+            text-align: center;
+            overflow: hidden;
+        }
+        .bookpic img {
+            max-width: 150px;
+            max-height: 200px;
+        }
+        .bookinfo {
+            display: block;
+            float: none;
+            height: 200px;
+        }
+        .pl {
+            font: 12px Arial,Helvetica,sans-serif;
+            line-height: 150%;
+            color: #666;
+        }
+        .info {
+            padding-left: 155px;
+            margin-left: 10px;
+        }
+        .content, .message_div {
+            max-width:800px;
+            margin: auto;
+        }
+        div.toolbox {
+            float: right;
+        }
+        div.box a {
+            color: #c90003;
+            font-weight: bold;
+        }
+        .smallbookpic img{
+            max-width: 90px;
+            max-height: 120px;
+        }
+        .smallbookpic{
+            float: left;
+            text-align: center;
+            overflow: hidden;
+        }
+        .smallbookinfo{
+            height: 130px;
+        }
+        .smallinfo{
+            padding-left: 95px;
+            margin-left: 10px;
+        }
+        .login {
+            margin-left: 20px;
+            margin-top: 20px;
+        }
+        .messages {
+            margin: auto;
+        }
+        .error{
+            background: rgba(255, 0, 0, 0.42);
+            font-weight: bold;
+            list-style-type: none;
+        }
+        .success {
+            background: greenyellow;
+        }
+    </style>
+    {% block head %} {% endblock %}
+</head>
+<body>
+<div class="container">
+    <div class="header_bg">
+        <div class="header">
+        <a class="site-title" href="/">图书搜索</a>
+        <div class="searchbar">
+            <form method="get" action="/search">
+                <input type="text" name="kw" value="{% block kw %}{% endblock %}" placeholder="搜索ISBN 书名 作者" >
+                <button type="submit">搜索</button>
+            </form>
+        </div>
+        <div class="toolbox">
+            {% block toolbox %} {% endblock %}
+            {% if request.session.admin %}
+                <a href="/admin">管理员面板</a>
+                <a href="/book/0/edit">新建图书</a>
+            {% endif %}
+            {% if not request.session.admin %}
+                <a href="{% url "BookManager.view.Login" %}?go={{ request.path }}">登陆</a>
+            {% else %}
+            <a href="{% url "BookManager.view.Logout" %}?go={{ request.path }}">退出</a>
+            {% endif %}
+        </div>
+        </div>
+    </div>
+    {% if messages %}
+    <div class="message_div">
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+    <p class="footer">By yuzeming@gmail.com</p>
+</div></body></html>

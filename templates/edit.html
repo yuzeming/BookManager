@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block head %}
+    <style>
+    #id_summary , #id_author_intro{
+        width: 100%;
+    }
+    tr td input  {
+        width: 100%;
+    }
+    table {
+        width: 90%
+    }
+    </style>
+{% endblock %}
+{% block title %}{{ book.title }} - 编辑{% endblock %}
+{% block content %}
+    <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table>
+    <tr><th>{% if bkid %}编辑{% else %}新建{% endif %}图书</th><td><button type="submit">保存</button></td></tr>
+    {{ form.as_table }}
+    <tr><th>当前封面</th><td><img src="/img/{{ bkid }}"></td></tr>
+    </table>
+
+    </form>
+{% endblock %}

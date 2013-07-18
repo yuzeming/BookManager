@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}管理员面板{% endblock %}
+
+{% block content %}
+<h3>未处理的借阅请求</h3>
+    <ol>
+    {% for i in ask %}
+        <li>
+        <a href="{% url "BookManager.view.Book" i.BookC.pk %}">{{ i.BookC.title }}</a> | {{ i.Name }}({{ i.Note }})
+        | <a href="{% url "BookManager.view.BookLend" i.pk %}?go=/admin">借出</a>
+        | <a href="{% url "BookManager.view.BookLend" i.pk %}delete?go=/admin">删除</a>
+        </li>
+    {% endfor %}
+    </ol>
+<h3>未归还的图书</h3>
+    <ol>
+        {% for i in ret %}
+            <li>
+                <a href="{% url "BookManager.view.Book" i.BookC.pk %}">{{ i.BookC.title }}</a> | {{ i.BookI.BookID  }} | {{ i.Name }}({{ i.Note }}) |
+                <a href="{% url "BookManager.view.BookLend" i.pk %}return?go=/admin">归还</a>
+            </li>
+        {% endfor %}
+    </ol>
+<h3>快速添加图书</h3>
+    <form method="get" action="/book/0/edit">
+        <input name="isbn" type="text">
+        <input name="AutoCompletion" type="hidden" value="true">
+        <button type="submit">提交</button>
+    </form>
+{% endblock %}

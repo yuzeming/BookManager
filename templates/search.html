@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block kw %}{{ kw }}{% endblock %}
+{% block content %}
+    <ol>
+        {% for book in list %}
+        <li>
+            <div class="bookinfo">
+                <div class="bookpic">
+                    <img src="/img/{{ book.pk }}">
+                </div>
+                <div class="info">
+                    <a href="book/{{ book.pk }}"><h2>{{ book.title }}</h2></a>
+                    <span class="pl"> 作者</span>:<a class="" href="/search?kw={{ book.author }}">{{ book.author }}</a><br>
+                    {% if book.publisher %}<span class="pl">出版社:</span> {{ book.publisher }}<br> {% endif %}
+                    {% if book.isbn %}<span class="pl">ISBN:</span> {{ book.isbn }}<br> {% endif %}
+                </div>
+            </div>
+        </li>
+        {% empty %}
+            <h2>没有搜索结果唉 ╮(╯▽╰)╭</h2>
+        {% endfor %}
+    </ol>
+{% endblock %}

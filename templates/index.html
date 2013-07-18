@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}欢迎{% endblock %}
+
+{% block content %}
+    <h3>图书馆共有{{ totc }}种图书{{ toti }}册</h3>
+    <h3>最新添加</h3>
+    <ol>
+        {% for book in recadd %}
+            <li>
+                <div class="smallbookinfo">
+                    <div class="smallbookpic">
+                        <img src="/img/{{ book.pk }}">
+                    </div>
+                    <div class="smallinfo">
+                        <a href="book/{{ book.pk }}">{{ book.title }}</a>
+                        <a class="" href="/search?kw={{ book.author }}">{{ book.author }}</a><br>
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+    </ol>
+    <h3>最多借阅</h3>
+    <ol>
+        {% for book in mostusd %}
+            <li>
+                <div class="smallbookinfo">
+                    <div class="smallbookpic">
+                        <img src="/img/{{ book.pk }}">
+                    </div>
+                    <div class="smallinfo">
+                        <a href="book/{{ book.pk }}">{{ book.title }}</a>
+                        <a class="" href="/search?kw={{ book.author }}">{{ book.author }}</a><br>
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+    </ol>
+{% endblock %}

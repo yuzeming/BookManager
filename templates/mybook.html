@@ -2,8 +2,8 @@
 {% block title %}管理员面板{% endblock %}
 
 {% block content %}
-
-<h3>未归还的图书</h3>
+<h3>你好  {{ request.user }}</h3>
+<h3>您未归还的图书</h3>
     <ol>
         {% for i in ret %}
             <li>
@@ -11,7 +11,7 @@
             </li>
         {% endfor %}
     </ol>
-<h3>未处理的借阅请求</h3>
+<h3>管理员未处理的借阅请求</h3>
     <ol>
     {% for i in ask %}
         <li>
@@ -19,4 +19,12 @@
         </li>
     {% endfor %}
     </ol>
+
+    <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table>
+    {{ cp.as_table }}
+    <button type="submit">保存</button>
+    </table>
+    </form>
 {% endblock %}

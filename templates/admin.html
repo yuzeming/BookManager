@@ -22,9 +22,11 @@
         {% endfor %}
     </ol>
 <h3>快速添加图书</h3>
-    <form method="get" action="/book/0/edit">
-        <input name="isbn" type="text">
-        <input name="AutoCompletion" type="hidden" value="true">
+    <form method="post">
+        {% csrf_token %}
+        <textarea rows="10" cols="40" name="isbn"></textarea>
+        <p>每行输入一种图书，格式为图书ISNB号码 (*数量)</p>
+        <p>如 9787505722460*10</p>
         <button type="submit">提交</button>
     </form>
 {% endblock %}

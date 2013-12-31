@@ -28,7 +28,10 @@ urlpatterns = patterns('',
     url(r'^login',"django.contrib.auth.views.login",{"template_name":"login.html"}),
     url(r'^logout', 'django.contrib.auth.views.logout',{"template_name":"logout.html"}),
     url(r"^admin$","BookManager.view.admin"),
-    url(r"^reg$","BookManager.view.reg"),
+    url(r"^reg$","BookManager.view.UserReg"),
+
+    url(r"^user$","BookManager.view.userManager"),
+
     #图书类型管理
     url(r'^img/(?P<bkid>\d+)/$',"BookManager.view.ShowImg"),
 

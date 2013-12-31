@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <p>批量添加用户</p>
+  <form method='post'>
+	{% csrf_token %}
+    <textarea cols="40" rows="10" name="adduser" ></textarea>
+    <p>每行输入一个用户信息，格式为：用户名 密码</p>
+    <p>如：testuser testpass</p>
+    <input type="submit" value="提交" />
+  </form>
+    用户名 | 账户可用 | 管理员 | 最后登录
+  {% for i in user %}
+    <p>{{ i }} | {{ i.is_active }}| {{ i.is_superuser }} | {{ i.last_login |date:"SHORT_DATE_FORMAT" }} | <a href="/user?u={{ i.pk }}&a=active">激活</a> | <a href="/user?u={{ i.pk }}&a=disable">禁用</a> | <a href="/user?u={{ i.pk }}&a=reset">重置密码</a> </p>
+  {% endfor %}
+{% endblock %}

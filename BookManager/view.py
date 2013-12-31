@@ -15,6 +15,7 @@ import random
 from django.core.files.base import ContentFile
 from settings import NOImg
 from django.contrib.auth.decorators import login_required
+from django.contrib import auth
 
 def NeedAdmin(viewfunc):
     def _NeedAdmin(request,*argv,**argc):
@@ -23,6 +24,47 @@ def NeedAdmin(viewfunc):
         else:
             return redirect("/")
     return _NeedAdmin
+
+def CreateByISBN(isbn,c=None):
+    try:
+        j = dict(json.loads(urllib2.urlopen('http://api.douban.com/v2/book/isbn/' + isbn,timeout=10).read()))
+    except:
+        return None
+    if c is None:
+        c = BookClass()
+    c.author = j.get("author", None)
+    c.isbn = j.get("isbn13", None)
+    c.title = j.get("title", None)
+    c.subtitle = j.get("subtitle", None)
+    c.pages = j.get("pages", None)
+    c.author = string.join(j.get("author", None), " / ")
+    c.translator = string.join(j.get("translator", None), "/ ")
+    c.price = j.get("price", None)
+    c.publisher = j.get("publisher", None)
+    c.pubdate = j.get("pubdate", None)
+    c.summary = j.get("summary", None)
+    c.author_intro = j.get("author_intro", None)
+    img_url = j.get("images", {}).get("large", "")
+    c.save()
+    try:
+        tmp = urllib2.urlopen(img_url,timeout=10).read()
+        c.cover_img.save(str(c.id)+".jpg",ContentFile(tmp))
+    except:
+        return None
+    return c
+
+def AddBook(bkid,num):
+    c = BookClass.objects.filter(pk=bkid).get()
+    qs = BookInstance.objects.filter(Type=c).order_by("-BookID")
+    last = 0
+    if qs.count() != 0:
+        last = qs[0].BookID
+    for x in xrange(last + 1, last + num +1):
+        bi = BookInstance()
+        bi.Type = c
+        bi.Buy = datetime.date.today()
+        bi.BookID = x
+        bi.save()
 
 @NeedAdmin
 def Edit(request, bkid):
@@ -41,34 +83,11 @@ def Edit(request, bkid):
 
     if request.REQUEST.get("isbn", None) and request.REQUEST.get("AutoCompletion", False):
         isbn = request.REQUEST.get("isbn", None)
-        try:
-            j = dict(json.loads(urllib2.urlopen('http://api.douban.com/v2/book/isbn/' + isbn,timeout=10).read()))
-        except:
-            j = None
-            messages.error(request, u"获取信息失败")
-        if j:
-            if c is None:
-                c = BookClass()
-            c.author = j.get("author", None)
-            c.isbn = j.get("isbn13", None)
-            c.title = j.get("title", None)
-            c.subtitle = j.get("subtitle", None)
-            c.pages = j.get("pages", None)
-            c.author = string.join(j.get("author", None), " / ")
-            c.translator = string.join(j.get("translator", None), "/ ")
-            c.price = j.get("price", None)
-            c.publisher = j.get("publisher", None)
-            c.pubdate = j.get("pubdate", None)
-            c.summary = j.get("summary", None)
-            c.author_intro = j.get("author_intro", None)
-            img_url = j.get("images", {}).get("large", "")
-            c.save()
-            try:
-                tmp = urllib2.urlopen(img_url,timeout=10).read()
-                c.cover_img.save(str(c.id)+".jpg",ContentFile(tmp))
-            except:
-                messages.error(request, u"获取图片失败")
+        c = CreateByISBN(isbn,c)
+        if c:
             return HttpResponseRedirect("/book/%d/" % (c.pk,))
+        else:
+            messages.error(request,"添加失败")
     book = None
     if request.method == "POST":
         book = BookForm(request.POST, request.FILES, instance=c)
@@ -93,7 +112,6 @@ def Edit(request, bkid):
     return render_to_response("edit.html", {"form": book, "book": c, "list": i, "bkid": bkid},
                               context_instance=RequestContext(request))
 
-
 def ShowImg(request, bkid):
     if bkid=='0':
         return HttpResponse(NOImg,content_type="image/jpeg")
@@ -113,20 +131,10 @@ def Book(request, bkid ):
             num = int(request.REQUEST.get("addnum", 0))
         except ValueError:
             num = 0
-        if (num>100):
+        if (num>20):
             messages.error(request, "不能一次添加太多")
         else:
-            qs = BookInstance.objects.filter(Type=c).order_by("-BookID")
-            last = 0
-            if qs.count() != 0:
-                last = qs[0].BookID
-
-            for x in xrange(last + 1, last + num +1):
-                bi = BookInstance()
-                bi.Type = c
-                bi.Buy = datetime.date.today()
-                bi.BookID = x
-                bi.save()
+            AddBook(bkid,num)
             messages.success(request, "已经添加")
     return render_to_response("book.html", {"book": c, "list": i ,"need":need}, context_instance=RequestContext(request))
 
@@ -213,15 +221,82 @@ def Index(request):
                               context_instance=RequestContext(request) )
 @login_required()
 def admin(request):
+    if request.method=="POST":
+        Succ=0
+        last=0
+        bookset = str(request.POST["isbn"])
+        bookset=bookset.splitlines()
+        for i in bookset:
+            x = i.split("*",2)
+            isbn = x[0]
+            num = 1
+            if len(x)==2:
+                try:
+                    num = int(x[1])
+                except:
+                    continue
+            c=CreateByISBN(isbn)
+            if c:
+                AddBook(c.id,num)
+                last = c.id
+                Succ+=1
+        messages.success(request,"成功添加%d种图书" % (Succ,) )
+        if Succ==1:
+           return redirect("/book/"+str(last))
     ask = BookUse.objects.filter(BookI = None)
     ret = BookUse.objects.filter(Rent__isnull = True , Lend__isnull=False)
     return render_to_response("admin.html" ,{"ask":ask,"ret":ret},context_instance=RequestContext(request))
 
 @login_required()
 def MyBook(request):
+    cp = ChangePasswordForm()
+    if request.method=="POST":
+        cp = ChangePasswordForm(request.POST)
+        if cp.is_valid():
+            if request.user.check_password(cp.cleaned_data["OldPassword"]):
+                request.user.set_password(cp.cleaned_data["Password"])
+                request.user.save()
+                messages.success(request,"修改成功")
+            else:
+                messages.error(request,"原密码不正确")
+
     ask = BookUse.objects.filter(User = request.user,BookI = None)
     ret = BookUse.objects.filter(User = request.user,Rent__isnull = True , Lend__isnull=False)
-    return render_to_response("mybook.html",{"ask":ask,"ret":ret},context_instance=RequestContext(request))
+    return render_to_response("mybook.html",{"ask":ask,"ret":ret,"cp":cp},context_instance=RequestContext(request))
 
 def UserReg(request):
-    pass
+    reg = UserRegForm()
+    if request.method=="POST":
+        reg = UserRegForm(request.POST)
+        if reg.is_valid():
+            User.objects.create_user(reg.cleaned_data["ID"],reg.cleaned_data["Email"],reg.cleaned_data["Password"])
+            messages.success(request,u"注册成功")
+            return redirect("/login")
+    return render_to_response("reg.html",{"reg":reg},context_instance=RequestContext(request))
+
+@NeedAdmin
+def userManager(request):
+    if request.method=="POST":
+        list = str(request.POST["adduser"])
+        list = list.splitlines()
+        for i in list:
+            x = i.split(" ")
+            if len(x)==2:
+                User.objects.create_user(x[0],"NOEMAIL@A.CN",x[1])
+
+    uid = request.GET.get("u",None)
+    act = request.GET.get("a",None)
+    user = None
+    if uid:
+        user = User.objects.get(pk=uid)
+    if act=="disable" or act=="active" :
+        user.is_active=bool(act=="active")
+        user.save()
+    if act=="reset":
+        np = str(random.randint(100000,999999))
+        user.set_password(np)
+        user.save()
+        messages.success(request,"重置为%s" % (np,))
+
+    all_user = User.objects.all()
+    return render_to_response("user.html",{"user":all_user},context_instance=RequestContext(request))

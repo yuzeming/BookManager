@@ -44,7 +44,7 @@
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <label for="Add">快速添加</label>
-                <input type="number" id="Add" name="addnum" min="0">
+                <input type="number" id="Add" name="addnum" min="0" max="20">
                 <input type="submit" value="确认">
             </form>
         {% endif %}

@@ -9,21 +9,26 @@ import base64
 import urllib2
 import json
 import string
-from settings import PASSWORD ,noimg
+from settings import PASSWORD
 import datetime
 import random
+from django.core.files.base import ContentFile
+from settings import NOImg
+from django.contrib.auth.decorators import login_required
 
-def NeedAdmin(func):
-    def _NeedAdmin(*args, **kwargs):
-        request = args[0]
-        if not request.session.get("admin", False):
-            messages.error(request,"只有可爱的管理员姐姐才能访问这个页面")
-            return redirect("/login?go="+request.path)
-        return func(*args,**kwargs)
+def NeedAdmin(viewfunc):
+    def _NeedAdmin(request,*argv,**argc):
+        if request.user.is_authenticated() and request.user.is_superuser:
+            return viewfunc(request,*argv,**argc)
+        else:
+            return redirect("/")
     return _NeedAdmin
 
 @NeedAdmin
 def Edit(request, bkid):
+    '''
+    编辑图书
+    '''
     c = None
     i = None
     if int(bkid) != 0:
@@ -37,7 +42,7 @@ def Edit(request, bkid):
     if request.REQUEST.get("isbn", None) and request.REQUEST.get("AutoCompletion", False):
         isbn = request.REQUEST.get("isbn", None)
         try:
-            j = dict(json.loads(urllib2.urlopen('http://api.douban.com/v2/book/isbn/' + isbn).read()))
+            j = dict(json.loads(urllib2.urlopen('http://api.douban.com/v2/book/isbn/' + isbn,timeout=10).read()))
         except:
             j = None
             messages.error(request, u"获取信息失败")
@@ -57,12 +62,12 @@ def Edit(request, bkid):
             c.summary = j.get("summary", None)
             c.author_intro = j.get("author_intro", None)
             img_url = j.get("images", {}).get("large", "")
+            c.save()
             try:
-                tmp = urllib2.urlopen(img_url).read()
-                c.cover_img = base64.encodestring(tmp)
+                tmp = urllib2.urlopen(img_url,timeout=10).read()
+                c.cover_img.save(str(c.id)+".jpg",ContentFile(tmp))
             except:
                 messages.error(request, u"获取图片失败")
-            c.save()
             return HttpResponseRedirect("/book/%d/" % (c.pk,))
     book = None
     if request.method == "POST":
@@ -71,17 +76,17 @@ def Edit(request, bkid):
         if book.is_valid():
             img = request.FILES.get("img", None)
             if img:
-                bimg = ''
+                book.img = ''
                 if img.multiple_chunks():
                     for chunk in img.chunk():
-                        bimg += chunk
+                        book.img += chunk
                 else:
-                    bimg = img.read()
-                book.img = base64.encodestring(bimg)
-            bookc = book.save(commit=False)
-            if book.img or book.cleaned_data["clean"]:
-                bookc.cover_img = book.img
-            bookc.save()
+                    book.img = img.read()
+            bookc = book.save()
+            if book.cleaned_data["clean"]:
+                bookc.cover_img.delete(True)
+            if book.img:
+                bookc.cover_img.save(str(c.id)+".jpg",ContentFile(book.img))
             return HttpResponseRedirect("/book/%d/" % (book.instance.pk,))
     else:
         book = BookForm(instance=c)
@@ -90,11 +95,13 @@ def Edit(request, bkid):
 
 
 def ShowImg(request, bkid):
+    if bkid=='0':
+        return HttpResponse(NOImg,content_type="image/jpeg")
     c = get_object_or_404(BookClass, pk=bkid)
     if c.cover_img:
-        return HttpResponse(base64.decodestring(c.cover_img), mimetype="image/jpg")
+        return HttpResponse(c.cover_img,content_type="image/jpeg")
     else:
-        return HttpResponse(base64.decodestring(noimg), mimetype="image/jpg")
+        return HttpResponse(NOImg,content_type="image/jpeg")
 
 
 def Book(request, bkid ):
@@ -106,18 +113,21 @@ def Book(request, bkid ):
             num = int(request.REQUEST.get("addnum", 0))
         except ValueError:
             num = 0
-        qs = BookInstance.objects.filter(Type=c).order_by("-BookID")
-        last = 0
-        if qs.count() != 0:
-            last = qs[0].BookID
+        if (num>100):
+            messages.error(request, "不能一次添加太多")
+        else:
+            qs = BookInstance.objects.filter(Type=c).order_by("-BookID")
+            last = 0
+            if qs.count() != 0:
+                last = qs[0].BookID
 
-        for x in xrange(last + 1, last + num +1):
-            bi = BookInstance()
-            bi.Type = c
-            bi.Buy = datetime.date.today()
-            bi.BookID = x
-            bi.save()
-        messages.success(request, "已经添加")
+            for x in xrange(last + 1, last + num +1):
+                bi = BookInstance()
+                bi.Type = c
+                bi.Buy = datetime.date.today()
+                bi.BookID = x
+                bi.save()
+            messages.success(request, "已经添加")
     return render_to_response("book.html", {"book": c, "list": i ,"need":need}, context_instance=RequestContext(request))
 
 @NeedAdmin
@@ -145,6 +155,7 @@ def Search(request):
     return render_to_response("search.html", {"list": book, "kw": kw}, context_instance=RequestContext(request))
 
 
+@login_required
 def Ask(request, bkid):
     c = get_object_or_404(BookClass, pk=bkid)
     if request.method == "POST":
@@ -152,14 +163,15 @@ def Ask(request, bkid):
         if askf.is_valid():
             askm = askf.save(commit=False)
             askm.BookC = c
+            askm.User = request.user
             askm.save()
-            messages.success(request, u"成功预订，管理员会人工联系你！")
+            messages.success(request, u"成功预订，管理员将联系你！")
             return redirect("/book/" + str(c.pk))
     else:
         askf = AskForm()
     return render_to_response("ask.html", {"ask": askf, "book": c}, context_instance=RequestContext(request))
 
-@NeedAdmin
+@login_required
 def BookLend(request,nid,action="lend"):
     u = get_object_or_404(BookUse, pk =nid)
     i = BookInstance.objects.filter(Type=u.BookC ,Use=None)
@@ -189,27 +201,8 @@ def BookLend(request,nid,action="lend"):
             i.Type.Lend += 1
             i.Type.save()
             i.save()
-            messages.success(request,u"将"+str(i.BookID)+u"借阅给"+u.Name)
+            messages.success(request,u"将"+str(i.BookID)+u"借阅给"+u.User.username)
     return redirect(go)
-
-def Login(request):
-    if request.method == "POST":
-        password = request.POST.get("PWD")
-        if password == PASSWORD:
-            request.session["admin"] = True
-            messages.success(request, u"登陆成功")
-        else:
-            messages.error(request, u"密码不正确")
-    go = request.REQUEST.get("go", "/")
-    if request.session.get("admin", False):
-        return redirect(go)
-    return render_to_response("login.html", {"go": go}, context_instance=RequestContext(request))
-
-
-def Logout(request):
-    request.session["admin"] = False
-    messages.success(request, u"退出")
-    return redirect("/")
 
 def Index(request):
     totc = BookClass.objects.count()
@@ -218,8 +211,17 @@ def Index(request):
     recadd = BookClass.objects.order_by("-Add")[0:6]
     return render_to_response("index.html",{"totc":totc,"toti":toti,"mostusd":mostuse,"recadd":recadd},
                               context_instance=RequestContext(request) )
-@NeedAdmin
+@login_required()
 def admin(request):
     ask = BookUse.objects.filter(BookI = None)
     ret = BookUse.objects.filter(Rent__isnull = True , Lend__isnull=False)
     return render_to_response("admin.html" ,{"ask":ask,"ret":ret},context_instance=RequestContext(request))
+
+@login_required()
+def MyBook(request):
+    ask = BookUse.objects.filter(User = request.user,BookI = None)
+    ret = BookUse.objects.filter(User = request.user,Rent__isnull = True , Lend__isnull=False)
+    return render_to_response("mybook.html",{"ask":ask,"ret":ret},context_instance=RequestContext(request))
+
+def UserReg(request):
+    pass

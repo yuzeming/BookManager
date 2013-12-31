@@ -18,13 +18,13 @@
     {% if book.isbn %}<span class="pl">ISBN:</span>{{ book.isbn }}<br> {% endif %}
         <div class="box">
             <a href="{% url "BookManager.view.Ask" book.pk %}">点击申请借阅</a>
-            {% if request.session.admin %}
+            {% if  request.user.is_superuser %}
                 <a href="{% url "BookManager.view.Edit" book.pk %}">编辑</a>
             {% endif %}
         </div>
     </div>
     </div>
-    {% if request.session.admin %}
+    {% if  request.user.is_superuser %}
     <div>
         <h2>借阅请求</h2>
         <ul>
@@ -40,7 +40,7 @@
     {% endif %}
     <div>
         <h2>现有图书</h2>
-        {% if request.session.admin %}
+        {% if  request.user.is_superuser %}
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <label for="Add">快速添加</label>
@@ -51,8 +51,8 @@
         <ul>
         {% for i in list %}
             <li>
-                {{ i.BookID }}:{% if i.Use %}{{ i.Use.Name }}于{{ i.Use.Lend }}借阅{% else %}在架上{% endif %}
-                {% if request.session.admin   %}
+                {{ i.BookID }}:{% if i.Use %}{{ i.Use.User }}于{{ i.Use.Lend }}借阅{% else %}在架上{% endif %}
+                {% if  request.user.is_superuser   %}
                 {% if i.Use  %}
                     <a href="{% url "BookManager.view.BookLend" i.Use.pk %}return">归还</a>
                 {% endif %}

@@ -6,14 +6,14 @@
 <h1><a href="{% url "BookManager.view.Book" book.pk %}">{{ book.title }}</a> : {{ booki.BookID }}</h1>
 <p>添加日期 {{ booki.Buy }}</p>
 {% if booki.Use %}
-    <p>{{ booki.Use.Name }}于{{ booki.Use.Lend }}借阅
+    <p>{{ booki.Use.User }}于{{ booki.Use.Lend }}借阅
         <a href="{% url "BookManager.view.BookLend" booki.Use.pk %}return">归还</a>
     </p>
 {% endif %}
     <a href="{% url "BookManager.view.BookIns" book.pk booki.BookID %}delete">删除</a>
 <h3>全部借阅记录</h3>
 {% for i in used %}
-    <p>{{ i.Name }} | {{ i.Lend }} | {{ i.Rent }}</p>
+    <p>{{ i.User }} | {{ i.Lend }} | {{ i.Rent }}</p>
 {% empty %}
     <p>没有借阅记录唉。</p>
 {% endfor %}

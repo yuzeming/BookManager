@@ -4,6 +4,8 @@ __author__ = 'Zeming'
 from django.db import models
 import datetime
 
+from django.contrib.auth.models import User
+
 class BookClass(models.Model):
     class Meta:
         verbose_name = u'图书'
@@ -17,7 +19,7 @@ class BookClass(models.Model):
     price = models.CharField(u'定价', max_length=60, blank=True, null=True)
     publisher = models.CharField(u'出版社', max_length=200, blank=True, null=True)
     pubdate = models.CharField(u'出版日期', max_length=60, blank=True, null=True)
-    cover_img = models.TextField(u'封面图', null=True,blank=True )
+    cover_img = models.FileField(upload_to="img")
     summary = models.TextField(u'内容简介', blank=True, max_length=2000, null=True)
     author_intro = models.TextField(u'作者简介', blank=True, max_length=2000, null=True)
     Lend = models.IntegerField(u"借阅次数",default=0)
@@ -37,7 +39,6 @@ class BookInstance(models.Model):
     def __unicode__(self):
         return unicode(self.Type.title) + unicode(self.BookID)
 
-
 class BookUse(models.Model):
     class Meta:
         verbose_name=u'借阅记录'
@@ -46,7 +47,7 @@ class BookUse(models.Model):
     BookC = models.ForeignKey(BookClass)
     Lend = models.DateField(u"出借日期",blank=True, null=True)
     Rent = models.DateField(u"归还日期",blank=True, null=True)
-    Name = models.CharField(u"借阅人", max_length=30)
+    User = models.ForeignKey(User)
     Note = models.CharField(u"备注", max_length=200,blank=True, null=True)
     def __unicode__(self):
         return unicode(self.Book.Type.title) + unicode(self.Name)

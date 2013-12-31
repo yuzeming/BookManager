@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}管理员面板{% endblock %}
+
+{% block content %}
+
+<h3>未归还的图书</h3>
+    <ol>
+        {% for i in ret %}
+            <li>
+                <a href="{% url "BookManager.view.Book" i.BookC.pk %}">{{ i.BookC.title }}</a> | {{ i.BookI.BookID  }} | {{ i.Note }}
+            </li>
+        {% endfor %}
+    </ol>
+<h3>未处理的借阅请求</h3>
+    <ol>
+    {% for i in ask %}
+        <li>
+        <a href="{% url "BookManager.view.Book" i.BookC.pk %}">{{ i.BookC.title }}</a> | {{ i.Note }}
+        </li>
+    {% endfor %}
+    </ol>
+{% endblock %}

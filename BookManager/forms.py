@@ -14,12 +14,15 @@ class BookForm(forms.ModelForm):
     AutoCompletion = forms.BooleanField(label=u"根据ISBN自动补全",required=False)
     delete = forms.BooleanField(label=u"删除图书",required=False)
 
-
 class AskForm(forms.ModelForm):
     class Meta:
         model = BookUse
-        fields = ("Name", "Note")
+        fields = ("Note",)
 
+class UserRegForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ("email","username","password")
 
 
 
